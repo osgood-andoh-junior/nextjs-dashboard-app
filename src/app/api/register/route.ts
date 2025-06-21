@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../lib/prisma'; // relative import without alias
+import { prisma } from '../../lib/prisma';
 import bcrypt from 'bcryptjs';
-
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { username, email, password } = await req.json();
 
-    // Check if user already exists
+    // Validate all fields
+    if (!username || !email || !password) {
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    }
+
+    // Check for existing user
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json({ error: 'User already exists' }, { status: 400 });
@@ -19,6 +23,7 @@ export async function POST(req: Request) {
     // Create user
     await prisma.user.create({
       data: {
+        username,
         email,
         password: hashedPassword,
       },
